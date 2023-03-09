@@ -1,11 +1,21 @@
-import sys, os, subprocess
-from pathlib import Path
-from datetime import datetime
 import json
+import os
+import subprocess
+import sys
 import time
-from utils import load_task_info, write_task_info, datetime, read_stop_signal, launch_step, reset_stop_signal
+from datetime import datetime
+from pathlib import Path
 
-tiramisu_path = '/data/scratch/mmerouani/tiramisu3/tiramisu'
+from utils import (
+    datetime,
+    launch_step,
+    load_task_info,
+    read_stop_signal,
+    reset_stop_signal,
+    write_task_info,
+)
+
+tiramisu_path = '/scratch/sk10691/workspace/new_tiramisu_vs_old/tiramisu'
 os.environ['TIRAMISU_ROOT'] = tiramisu_path
 os.environ['BEAM_SIZE'] = "3"  # auto-scheduler parameter
 os.environ['MAX_DEPTH'] = "3"  # auto-scheduler parameter
@@ -18,24 +28,25 @@ os.environ['SAVE_BEST_SCHED_IN_FILE'] = "0"  # save best speed up in file
 os.environ[
     'EXECUTE_BEST_AND_INITIAL_SCHED'] = "1"  # execute the best schedule to get the real speed up, should only be used with the cost model
 os.environ[
-    'LOG_FILE_PATH'] = "/data/commit/tiramisu/data_factory_kb4083/in_progress_exec_large_beam_corrected_skew/benchmarks.txt"  # path where to save results
+    'LOG_FILE_PATH'] = "/scratch/sk10691/workspace/new_tiramisu_vs_old/dataset/dataset-manipulation/dataset_creation_scripts/logs.txt"  # path where to save results
 os.environ['AS_VERBOSE'] = "1"  # print outputs
 # os.environ['EVAL_TIMEOUT'] = str(os.environ['NB_EXEC']*100) #seconds timeout for the no schedule version of the program
 os.environ['INITIAL_TIMEOUT'] = "300000"  # seconds timeout for the no schedule version of the program
 os.environ['SCHED_TIMEOUT_FACTOR'] = "100"  # The max slowdown factor that has the possibility to run MAX_RUNS times
 os.environ['DYNAMIC_RUNS'] = "1"  # Activate the automatic adjustment of the number of runs
+os.environ['LD_LIBRARY_PATH'] = "${TIRAMISU_ROOT}/3rdParty/Halide/build/src:${TIRAMISU_ROOT}/3rdParty/llvm/build/lib:${TIRAMISU_ROOT}/3rdParty/isl/build/lib"
 
 prepare_generator_cmd = 'cd ${FUNC_NAME};\
-c++ -I${TIRAMISU_ROOT}/3rdParty/Halide/include -I${TIRAMISU_ROOT}/include -I${TIRAMISU_ROOT}/3rdParty/isl/include  -Wl,--no-as-needed -ldl -g -fno-rtti -lz -lpthread -std=c++11 -O0 -o ${FUNC_NAME}_generator.cpp.o -c ${FUNC_NAME}_generator.cpp;\
-c++ -Wl,--no-as-needed -ldl -g -fno-rtti -lz -lpthread -std=c++11 -O0 ${FUNC_NAME}_generator.cpp.o -o ./${FUNC_NAME}_generator   -L${TIRAMISU_ROOT}/build  -L${TIRAMISU_ROOT}/3rdParty/Halide/lib  -L${TIRAMISU_ROOT}/3rdParty/isl/build/lib  -Wl,-rpath,${TIRAMISU_ROOT}/build:${TIRAMISU_ROOT}/3rdParty/Halide/lib:${TIRAMISU_ROOT}/3rdParty/isl/build/lib -ltiramisu -ltiramisu_auto_scheduler -lHalide -lisl'
+${CXX} -I${TIRAMISU_ROOT}/3rdParty/Halide/install/include -I${TIRAMISU_ROOT}/include -I${TIRAMISU_ROOT}/3rdParty/isl/include  -Wl,--no-as-needed -ldl -g -fno-rtti  -lpthread -std=c++17 -O0 -o ${FUNC_NAME}_generator.cpp.o -c ${FUNC_NAME}_generator.cpp;\
+${CXX} -Wl,--no-as-needed -ldl -g -fno-rtti  -lpthread -std=c++17 -O0 ${FUNC_NAME}_generator.cpp.o -o ./${FUNC_NAME}_generator   -L${TIRAMISU_ROOT}/build  -L${TIRAMISU_ROOT}/3rdParty/Halide/install/lib64  -L${TIRAMISU_ROOT}/3rdParty/isl/build/lib  -Wl,-rpath,${TIRAMISU_ROOT}/build:${TIRAMISU_ROOT}/3rdParty/Halide/install/lib64:${TIRAMISU_ROOT}/3rdParty/isl/build/lib -ltiramisu -ltiramisu_auto_scheduler -lHalide -lisl'
 run_generator_cmd = 'cd ${FUNC_NAME};\
 ./${FUNC_NAME}_generator'
 
 prepare_autosched_cmd = 'cd ${FUNC_NAME};\
-c++ -I${TIRAMISU_ROOT}/3rdParty/Halide/include -I${TIRAMISU_ROOT}/include -I${TIRAMISU_ROOT}/3rdParty/isl/include  -Wl,--no-as-needed -ldl -g -fno-rtti -lz -lpthread -std=c++11 -O0 -o ${FUNC_NAME}_autoscheduler.cpp.o -c ${FUNC_NAME}_autoscheduler.cpp;\
-c++ -Wl,--no-as-needed -ldl -g -fno-rtti -lz -lpthread -std=c++11 -O0 ${FUNC_NAME}_autoscheduler.cpp.o -o ./${FUNC_NAME}_autoscheduler   -L${TIRAMISU_ROOT}/build  -L${TIRAMISU_ROOT}/3rdParty/Halide/lib  -L${TIRAMISU_ROOT}/3rdParty/isl/build/lib  -Wl,-rpath,${TIRAMISU_ROOT}/build:${TIRAMISU_ROOT}/3rdParty/Halide/lib:${TIRAMISU_ROOT}/3rdParty/isl/build/lib -ltiramisu -ltiramisu_auto_scheduler -lHalide -lisl ;\
-g++ -shared -o ${FUNC_NAME}.o.so ${FUNC_NAME}.o;\
-g++ -std=c++11 -fno-rtti -I${TIRAMISU_ROOT}/include -I${TIRAMISU_ROOT}/3rdParty/Halide/include -I${TIRAMISU_ROOT}/3rdParty/isl/include/ -I${TIRAMISU_ROOT}/benchmarks -L${TIRAMISU_ROOT}/build -L${TIRAMISU_ROOT}/3rdParty/Halide/lib/ -L${TIRAMISU_ROOT}/3rdParty/isl/build/lib -o ${FUNC_NAME}_wrapper -ltiramisu -lHalide -ldl -lpthread -lz -lm -Wl,-rpath,${TIRAMISU_ROOT}/build ./${FUNC_NAME}_wrapper.cpp ./${FUNC_NAME}.o.so -ltiramisu -lHalide -ldl -lpthread -lz -lm'
+${CXX} -I${TIRAMISU_ROOT}/3rdParty/Halide/install/include -I${TIRAMISU_ROOT}/include -I${TIRAMISU_ROOT}/3rdParty/isl/include  -Wl,--no-as-needed -ldl -g -fno-rtti  -lpthread -std=c++17 -O0 -o ${FUNC_NAME}_autoscheduler.cpp.o -c ${FUNC_NAME}_autoscheduler.cpp;\
+${CXX} -Wl,--no-as-needed -ldl -g -fno-rtti  -lpthread -std=c++17 -O0 ${FUNC_NAME}_autoscheduler.cpp.o -o ./${FUNC_NAME}_autoscheduler   -L${TIRAMISU_ROOT}/build  -L${TIRAMISU_ROOT}/3rdParty/Halide/install/lib64  -L${TIRAMISU_ROOT}/3rdParty/isl/build/lib  -Wl,-rpath,${TIRAMISU_ROOT}/build:${TIRAMISU_ROOT}/3rdParty/Halide/install/lib64:${TIRAMISU_ROOT}/3rdParty/isl/build/lib -ltiramisu -ltiramisu_auto_scheduler -lHalide -lisl ;\
+${CXX} -shared -o ${FUNC_NAME}.o.so ${FUNC_NAME}.o;\
+${CXX} -std=c++17 -fno-rtti -I${TIRAMISU_ROOT}/include -I${TIRAMISU_ROOT}/3rdParty/Halide/install/include -I${TIRAMISU_ROOT}/3rdParty/isl/include/ -I${TIRAMISU_ROOT}/benchmarks -L${TIRAMISU_ROOT}/build -L${TIRAMISU_ROOT}/3rdParty/Halide/install/lib64/ -L${TIRAMISU_ROOT}/3rdParty/isl/build/lib -o ${FUNC_NAME}_wrapper -ltiramisu -lHalide -ldl -lpthread  -lm -Wl,-rpath,${TIRAMISU_ROOT}/build ./${FUNC_NAME}_wrapper.cpp ./${FUNC_NAME}.o.so -ltiramisu -lHalide -ldl -lpthread  -lm -lisl'
 run_autosched_cmd = 'cd ${FUNC_NAME};\
 ./${FUNC_NAME}_autoscheduler > output.txt'
 clean_up_cmd = 'cd ${FUNC_NAME};\

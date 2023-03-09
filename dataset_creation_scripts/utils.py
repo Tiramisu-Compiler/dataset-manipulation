@@ -1,21 +1,22 @@
-from simple_slurm import Slurm
-import sys
-from pathlib import Path
 import json
-from datetime import datetime, timedelta
-import pandas as pd
-import shutil
-import time
-import re
 import math
-import subprocess
 import os
-from tqdm.notebook import tqdm
 import pickle
+import re
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import pandas as pd
+from simple_slurm import Slurm
+from tqdm.notebook import tqdm
 
 if __name__ == "__main__":  # this isn't ran when this file is imported
-    sys.path.append("RandomTiramisu_non_rectangular")
-    from RandomTiramisu_non_rectangular import TiramisuMaker
+    sys.path.append("RandomTiramisu")
+    from RandomTiramisu import TiramisuMaker
 
 
 def init_task_info(path):
@@ -83,8 +84,8 @@ def launch_worker_folder(path, worker_id):
         job_name='data_gen_' + str(worker_id).zfill(2),
         nodes=1,
         exclusive='',
-        partition='research',
-        exclude='lanka04,lanka21,lanka24',
+        # partition='c2',
+        # exclude='lanka04,lanka21,lanka24',
         #         exclude = 'lanka04,lanka03,lanka21',
         #         open_mode = 'append',
         #         output= str(path)+ '/output_' + str(worker_id).zfill(2) + '/' + f'{Slurm.SLURM_JOBID}_{Slurm.SLURMD_NODENAME}_{Slurm.SLURM_JOB_NAME}.out',
