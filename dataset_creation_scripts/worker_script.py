@@ -15,27 +15,6 @@ from utils import (
     write_task_info,
 )
 
-tiramisu_path = '/scratch/sk10691/workspace/new_tiramisu_vs_old/tiramisu'
-os.environ['TIRAMISU_ROOT'] = tiramisu_path
-os.environ['BEAM_SIZE'] = "3"  # auto-scheduler parameter
-os.environ['MAX_DEPTH'] = "3"  # auto-scheduler parameter
-os.environ['MAX_RUNS'] = "30"  # Maximum number of execution time measurments made on a schedule
-os.environ['MIN_RUNS'] = "3"  # Minumum number of execution time measurments made on a schedule
-os.environ['EXPLORE_BY_EXECUTION'] = "1"  # evalute the schedules by exploration
-os.environ['SET_DEFAULT_EVALUATION'] = "0"  # evalute the schedules by exploration
-os.environ['PRUNE_SLOW_SCHEDULES'] = "0"  # evalute the schedules by exploration
-os.environ['SAVE_BEST_SCHED_IN_FILE'] = "0"  # save best speed up in file
-os.environ[
-    'EXECUTE_BEST_AND_INITIAL_SCHED'] = "1"  # execute the best schedule to get the real speed up, should only be used with the cost model
-os.environ[
-    'LOG_FILE_PATH'] = "/scratch/sk10691/workspace/new_tiramisu_vs_old/dataset/dataset-manipulation/dataset_creation_scripts/logs.txt"  # path where to save results
-os.environ['AS_VERBOSE'] = "1"  # print outputs
-# os.environ['EVAL_TIMEOUT'] = str(os.environ['NB_EXEC']*100) #seconds timeout for the no schedule version of the program
-os.environ['INITIAL_TIMEOUT'] = "300000"  # seconds timeout for the no schedule version of the program
-os.environ['SCHED_TIMEOUT_FACTOR'] = "100"  # The max slowdown factor that has the possibility to run MAX_RUNS times
-os.environ['DYNAMIC_RUNS'] = "1"  # Activate the automatic adjustment of the number of runs
-os.environ['LD_LIBRARY_PATH'] = "${TIRAMISU_ROOT}/3rdParty/Halide/build/src:${TIRAMISU_ROOT}/3rdParty/llvm/build/lib:${TIRAMISU_ROOT}/3rdParty/isl/build/lib"
-
 prepare_generator_cmd = 'cd ${FUNC_NAME};\
 ${CXX} -I${TIRAMISU_ROOT}/3rdParty/Halide/install/include -I${TIRAMISU_ROOT}/include -I${TIRAMISU_ROOT}/3rdParty/isl/include  -Wl,--no-as-needed -ldl -g -fno-rtti  -lpthread -std=c++17 -O0 -o ${FUNC_NAME}_generator.cpp.o -c ${FUNC_NAME}_generator.cpp;\
 ${CXX} -Wl,--no-as-needed -ldl -g -fno-rtti  -lpthread -std=c++17 -O0 ${FUNC_NAME}_generator.cpp.o -o ./${FUNC_NAME}_generator   -L${TIRAMISU_ROOT}/build  -L${TIRAMISU_ROOT}/3rdParty/Halide/install/lib64  -L${TIRAMISU_ROOT}/3rdParty/isl/build/lib  -Wl,-rpath,${TIRAMISU_ROOT}/build:${TIRAMISU_ROOT}/3rdParty/Halide/install/lib64:${TIRAMISU_ROOT}/3rdParty/isl/build/lib -ltiramisu -ltiramisu_auto_scheduler -lHalide -lisl'
@@ -119,7 +98,7 @@ if __name__ == "__main__":
                 function_folder.rename(
                     skipped_folder / function_name)  # monving the function to the skipped function folder
             else:
-                print(f'\n# {str(datetime.now())} function completed', flush=True)
+                print(f'\n# {str(datetime.now())} functio   n completed', flush=True)
                 function_folder.rename(done_folder / function_name)  # monving the function to the done function folder
 
             taskinfo['last_updated'] = datetime.now()

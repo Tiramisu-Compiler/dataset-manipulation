@@ -84,7 +84,7 @@ def launch_worker_folder(path, worker_id):
         job_name='data_gen_' + str(worker_id).zfill(2),
         nodes=1,
         exclusive='',
-        # partition='c2',
+        # partition='compute',
         # exclude='lanka04,lanka21,lanka24',
         #         exclude = 'lanka04,lanka03,lanka21',
         #         open_mode = 'append',
@@ -95,8 +95,33 @@ def launch_worker_folder(path, worker_id):
         #         error = str(path)+ '/output_' + str(worker_id).zfill(2) + '/' + f'{Slurm.SLURM_JOB_NAME}.err'
         error=str(path) + '/output/data_gen_' + f'{str(worker_id).zfill(2)}.err'
     )
-    job_id = job.sbatch(
-        'cd ' + path + '; stdbuf -o0 -e0 python3 ' + str(data_factory_path + 'worker_script.py ') + str(path))
+
+    job_id = job.sbatch(f'''
+set -o allexport
+source {data_factory_path}/.env
+set +o allexport
+
+. $CONDA_DIR/bin/activate
+conda activate $CONDA_ENV
+
+
+cd {path}
+
+printenv CXX
+printenv GXX
+
+
+set -o allexport
+source {data_factory_path}/.env
+set +o allexport
+
+
+printenv CXX
+printenv GXX
+
+stdbuf -o0 -e0 python3 {data_factory_path}/worker_script.py {path}
+    ''')
+        # 'cd ' + path + '; stdbuf -o0 -e0 python3 ' + str(data_factory_path + 'worker_script.py ') + str(path))
     print(f'Worker job {job_id} submitted on folder {str(path)}')
 
 
